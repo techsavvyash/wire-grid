@@ -18,7 +18,7 @@
     "typecheck": "tsc -b",
     "typecheck:examples": "pnpm -r --filter './examples/*' typecheck",
     "version": "changeset version",
-    "check": "pnpm lint && pnpm typecheck && pnpm typecheck:examples && pnpm test && pnpm build && pnpm build:examples && pnpm docs:build && pnpm e2e"
+    "check": "pnpm lint && pnpm typecheck && pnpm typecheck:examples && pnpm build && pnpm test && pnpm build:examples && pnpm docs:build && pnpm e2e"
   },
   "devDependencies": {
     "@changesets/cli": "^2.31.0",
