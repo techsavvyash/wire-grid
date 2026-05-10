@@ -1,0 +1,23 @@
+{
+  "name": "wire-grid-workspace",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.11.0",
+  "scripts": {
+    "build": "pnpm -r --filter './packages/*' build",
+    "build:examples": "pnpm -r --filter './examples/*' build",
+    "dev:next": "pnpm --filter next-basic dev",
+    "lint": "oxlint .",
+    "test": "vitest run",
+    "typecheck": "tsc -b",
+    "typecheck:examples": "pnpm -r --filter './examples/*' typecheck",
+    "check": "pnpm lint && pnpm typecheck && pnpm typecheck:examples && pnpm test && pnpm build && pnpm build:examples"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.1",
+    "oxlint": "^1.30.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.15"
+  }
+}

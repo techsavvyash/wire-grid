@@ -1,0 +1,29 @@
+{
+  "name": "@techsavvyash/wire-grid-next",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup && tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@techsavvyash/wire-grid": "workspace:*",
+    "@techsavvyash/wire-grid-runtime": "workspace:*"
+  },
+  "peerDependencies": {
+    "next": ">=14"
+  },
+  "devDependencies": {
+    "next": "^16.0.8",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3"
+  }
+}
