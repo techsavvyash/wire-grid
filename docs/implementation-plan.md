@@ -677,7 +677,7 @@ Goal: Support safe direct style edits.
 Supported:
 
 ```tsx
-<h1 style={{ color: "red" }}>Hello</h1>
+<h1 style={ { color: "red" } }>Hello</h1>
 ```
 
 Deliverables:
@@ -685,7 +685,7 @@ Deliverables:
 - Color picker UI.
 - AST edit support for object expression style props.
 - Add missing style property when a style object exists.
-- Optional creation of `style={{ color: "..." }}` for simple elements.
+- Optional creation of `style={ { color: "..." } }` for simple elements.
 
 Exit criteria:
 
@@ -956,4 +956,3 @@ pnpm next dev
 5. Add native JSX element metadata injection.
 6. Add the edit endpoint.
 7. Implement direct JSX text editing.
-

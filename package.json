@@ -7,6 +7,9 @@
     "build": "pnpm -r --filter './packages/*' build",
     "build:examples": "pnpm -r --filter './examples/*' build",
     "changeset": "changeset",
+    "docs:build": "vitepress build docs",
+    "docs:dev": "vitepress dev docs",
+    "docs:preview": "vitepress preview docs",
     "dev:next": "pnpm --filter next-basic dev",
     "lint": "oxlint .",
     "release": "pnpm build && changeset publish",
@@ -14,7 +17,7 @@
     "typecheck": "tsc -b",
     "typecheck:examples": "pnpm -r --filter './examples/*' typecheck",
     "version": "changeset version",
-    "check": "pnpm lint && pnpm typecheck && pnpm typecheck:examples && pnpm test && pnpm build && pnpm build:examples"
+    "check": "pnpm lint && pnpm typecheck && pnpm typecheck:examples && pnpm test && pnpm build && pnpm build:examples && pnpm docs:build"
   },
   "devDependencies": {
     "@changesets/cli": "^2.31.0",
@@ -22,6 +25,8 @@
     "oxlint": "^1.30.0",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
+    "vite": "^7.3.3",
+    "vitepress": "^1.6.4",
     "vitest": "^4.0.15"
   }
 }

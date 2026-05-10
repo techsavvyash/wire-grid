@@ -1,7 +1,7 @@
 const stats = [
   ["Adapter", "Next.js"],
   ["Runtime", "Enabled"],
-  ["Editing", "Planned"],
+  ["Editing", "Planned"]
 ]
 
 export default function HomePage() {
