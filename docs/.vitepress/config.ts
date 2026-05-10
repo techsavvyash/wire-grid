@@ -4,6 +4,7 @@ export default defineConfig({
   title: "Wire Grid",
   description: "Development-only browser editing for React source code.",
   cleanUrls: true,
+  head: [["link", { rel: "icon", href: "/wire-grid-mark.svg", type: "image/svg+xml" }]],
   themeConfig: {
     logo: "/wire-grid-mark.svg",
     nav: [
