@@ -2,6 +2,12 @@
 
 This tutorial shows the current Next.js alpha flow.
 
+<video controls muted playsinline src="/tutorials/wire-grid-product-demo.mp4" style="width: 100%; border-radius: 8px; border: 1px solid var(--vp-c-divider);"></video>
+
+The product demo above shows the complete loop: select rendered text, edit it in the browser, write the change through `POST /__wire-grid/edit`, and confirm the update persists after reload.
+
+## Raw Walkthrough Capture
+
 <video controls muted playsinline src="/tutorials/next-text-edit.webm" style="width: 100%; border-radius: 8px; border: 1px solid var(--vp-c-divider);"></video>
 
 ## 1. Start The App
