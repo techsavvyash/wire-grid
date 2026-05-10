@@ -8,8 +8,7 @@ export default defineConfig({
     logo: "/wire-grid-mark.svg",
     nav: [
       { text: "Guide", link: "/guide/getting-started" },
-      { text: "Tutorial", link: "/guide/tutorial" },
-      { text: "Implementation", link: "/implementation-plan" }
+      { text: "Tutorial", link: "/guide/tutorial" }
     ],
     sidebar: [
       {
@@ -21,10 +20,7 @@ export default defineConfig({
           { text: "Release Workflow", link: "/guide/releases" }
         ]
       },
-      {
-        text: "Reference",
-        items: [{ text: "Implementation Plan", link: "/implementation-plan" }]
-      }
+      { text: "Reference", items: [{ text: "Releases", link: "/guide/releases" }] }
     ],
     socialLinks: [
       { icon: "github", link: "https://github.com/techsavvyash/wire-guard" }

@@ -10,6 +10,7 @@
     "docs:build": "vitepress build docs",
     "docs:dev": "vitepress dev docs",
     "docs:preview": "vitepress preview docs",
+    "e2e": "playwright test",
     "dev:next": "pnpm --filter next-basic dev",
     "lint": "oxlint .",
     "release": "pnpm build && changeset publish",
@@ -17,10 +18,11 @@
     "typecheck": "tsc -b",
     "typecheck:examples": "pnpm -r --filter './examples/*' typecheck",
     "version": "changeset version",
-    "check": "pnpm lint && pnpm typecheck && pnpm typecheck:examples && pnpm test && pnpm build && pnpm build:examples && pnpm docs:build"
+    "check": "pnpm lint && pnpm typecheck && pnpm typecheck:examples && pnpm test && pnpm build && pnpm build:examples && pnpm docs:build && pnpm e2e"
   },
   "devDependencies": {
     "@changesets/cli": "^2.31.0",
+    "@playwright/test": "^1.57.0",
     "@types/node": "^25.0.1",
     "oxlint": "^1.30.0",
     "tsup": "^8.5.1",

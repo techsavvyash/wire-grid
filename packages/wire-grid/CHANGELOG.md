@@ -1,6 +1,6 @@
 # @techsavvyash/wire-grid
 
-## 0.0.0
+## 0.0.1
 
 ### Initial Changes
 

@@ -1,6 +1,6 @@
 # @techsavvyash/wire-grid-runtime
 
-## 0.0.0
+## 0.0.1
 
 ### Initial Changes
 
