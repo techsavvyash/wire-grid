@@ -13,6 +13,8 @@ const baselinePropText = "Prop text heading."
 const editedPropText = "Prop edited by Playwright."
 const baselineHeadingColor = "#111827"
 const editedHeadingColor = "#2563eb"
+const baselineClassToken = "text-red-500"
+const editedClassToken = "text-blue-500"
 
 test.afterEach(async () => {
   const source = await readFile(pageFilePath, "utf8")
@@ -24,6 +26,7 @@ test.afterEach(async () => {
       .replace(editedComponentText, baselineComponentText)
       .replace(editedPropText, baselinePropText)
       .replace(`color: "${editedHeadingColor}"`, `color: "${baselineHeadingColor}"`)
+      .replace(editedClassToken, baselineClassToken)
   )
 })
 
@@ -127,6 +130,56 @@ test("edits inline style color through Wire Grid", async ({ page }) => {
   const source = await readFile(pageFilePath, "utf8")
 
   expect(source).toContain(`color: "${editedHeadingColor}"`)
+  expect(relevantResponses).toContainEqual(
+    expect.stringContaining("200 http://localhost:3100/__wire-grid/edit")
+  )
+  expect(consoleMessages).toEqual([])
+})
+
+test("edits simple Tailwind-style class color tokens", async ({ page }) => {
+  const consoleMessages: string[] = []
+  const relevantResponses: string[] = []
+
+  page.on("console", (message) => {
+    if (message.type() === "warning" || message.type() === "error") {
+      consoleMessages.push(`${message.type()}: ${message.text()}`)
+    }
+  })
+  page.on("response", (response) => {
+    const url = response.url()
+
+    if (url.includes("__wire-grid") || url.includes("_rsc")) {
+      relevantResponses.push(`${response.status()} ${url}`)
+    }
+  })
+
+  await page.goto("/")
+
+  const fixture = page.getByText("Tailwind token text.")
+  const metadata = await fixture.evaluate((element) => ({
+    classTokens: element.getAttribute("data-wg-class-tokens"),
+    file: element.getAttribute("data-wg-file"),
+    id: element.getAttribute("data-wg-id")
+  }))
+
+  expect(metadata).toEqual({
+    classTokens: baselineClassToken,
+    file: "app/page.tsx",
+    id: expect.stringContaining("app/page.tsx:")
+  })
+
+  await page.getByRole("button", { name: "Edit" }).click()
+  await fixture.click()
+  await page
+    .getByRole("combobox", { name: "Wire Grid class color token" })
+    .selectOption(editedClassToken)
+  await page.getByRole("button", { exact: true, name: "Save class" }).click()
+
+  await expect(fixture).toHaveCSS("color", "rgb(59, 130, 246)")
+
+  const source = await readFile(pageFilePath, "utf8")
+
+  expect(source).toContain(`className="tailwind-fixture ${editedClassToken}"`)
   expect(relevantResponses).toContainEqual(
     expect.stringContaining("200 http://localhost:3100/__wire-grid/edit")
   )

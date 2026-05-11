@@ -49,8 +49,13 @@ export function instrumentSource({
       includeCustomComponents
     })
     const editableStyleProps = getEditableStyleProps(node)
+    const editableClassTokens = getEditableClassTokens(node)
 
-    if (!metadata && editableStyleProps.length === 0) {
+    if (
+      !metadata &&
+      editableStyleProps.length === 0 &&
+      editableClassTokens.length === 0
+    ) {
       return
     }
 
@@ -73,6 +78,14 @@ export function instrumentSource({
 
     if (editableStyleProps.length > 0) {
       addAttribute(openingElement, "data-wg-style-props", editableStyleProps.join(","))
+    }
+
+    if (editableClassTokens.length > 0) {
+      addAttribute(
+        openingElement,
+        "data-wg-class-tokens",
+        editableClassTokens.join(",")
+      )
     }
 
     changed = true
@@ -184,6 +197,32 @@ function getEditableStyleProps(element: t.JSXElement) {
   }
 
   return ["color"]
+}
+
+function getEditableClassTokens(element: t.JSXElement) {
+  const name = element.openingElement.name
+
+  if (!t.isJSXIdentifier(name) || name.name !== name.name.toLowerCase()) {
+    return []
+  }
+
+  const classNameAttribute = element.openingElement.attributes.find(
+    (attribute) =>
+      t.isJSXAttribute(attribute) &&
+      t.isJSXIdentifier(attribute.name, { name: "className" })
+  )
+
+  if (
+    !classNameAttribute ||
+    !t.isJSXAttribute(classNameAttribute) ||
+    !t.isStringLiteral(classNameAttribute.value)
+  ) {
+    return []
+  }
+
+  return classNameAttribute.value.value
+    .split(/\s+/)
+    .filter((token) => /^(text|bg|border)-[a-z]+-\d{2,3}$/.test(token))
 }
 
 function addAttribute(

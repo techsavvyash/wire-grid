@@ -83,4 +83,19 @@ describe("instrumentSource", () => {
     expect(result).toContain(`data-wg-kind="jsx-text"`)
     expect(result).toContain(`data-wg-style-props="color"`)
   })
+
+  it("adds editable class token metadata to native elements", () => {
+    const code = `export function Page() {
+  return <p className="text-red-500 font-bold">Hello</p>
+}
+`
+
+    const result = instrumentSource({
+      code,
+      filePath: "/repo/app/app/page.tsx",
+      rootDir: "/repo/app"
+    })
+
+    expect(result).toContain(`data-wg-class-tokens="text-red-500"`)
+  })
 })

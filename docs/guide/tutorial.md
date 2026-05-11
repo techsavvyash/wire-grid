@@ -49,6 +49,12 @@ These work when the component forwards Wire Grid metadata props to a DOM node.
 The `h1` fixture also exposes a color input because it has an inline style
 object.
 
+Simple Tailwind-style color tokens expose a class token selector:
+
+```tsx
+<p className="tailwind-fixture text-red-500">Tailwind token text.</p>
+```
+
 ## 4. Save The Edit
 
 Change the text and press **Save**. The runtime sends a request to the development endpoint:

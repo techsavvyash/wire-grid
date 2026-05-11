@@ -13,6 +13,7 @@ interface SelectionState {
   rect: DOMRect
   source: {
     column?: number
+    classTokens: string[]
     file: string
     id: string
     kind?: string
@@ -30,6 +31,7 @@ export function WireGridOverlay({
   const [hoverRect, setHoverRect] = useState<DOMRect | null>(null)
   const [selection, setSelection] = useState<SelectionState | null>(null)
   const [colorValue, setColorValue] = useState("#111827")
+  const [classTokenValue, setClassTokenValue] = useState("")
   const [value, setValue] = useState("")
   const [status, setStatus] = useState("")
 
@@ -67,6 +69,7 @@ export function WireGridOverlay({
         source
       })
       setColorValue(rgbToHex(window.getComputedStyle(target).color) ?? "#111827")
+      setClassTokenValue(getDefaultClassToken(source.classTokens) ?? "")
       setValue(target.textContent?.trim() ?? "")
       setStatus("")
     }
@@ -93,9 +96,11 @@ export function WireGridOverlay({
           selection={selection}
           setStatus={setStatus}
           setColorValue={setColorValue}
+          setClassTokenValue={setClassTokenValue}
           setValue={setValue}
           status={status}
           colorValue={colorValue}
+          classTokenValue={classTokenValue}
           value={value}
         />
       ) : null}
@@ -122,8 +127,10 @@ function EditPopover({
   editEndpoint,
   selection,
   colorValue,
+  classTokenValue,
   setStatus,
   setColorValue,
+  setClassTokenValue,
   setValue,
   status,
   value
@@ -131,8 +138,10 @@ function EditPopover({
   editEndpoint: string
   selection: SelectionState
   colorValue: string
+  classTokenValue: string
   setStatus: (status: string) => void
   setColorValue: (value: string) => void
+  setClassTokenValue: (value: string) => void
   setValue: (value: string) => void
   status: string
   value: string
@@ -209,6 +218,46 @@ function EditPopover({
     setStatus("Saved")
   }
 
+  async function saveClassTokenEdit() {
+    const from = selection.source.classTokens[0]
+
+    if (!from || !classTokenValue) {
+      setStatus("No editable class token")
+      return
+    }
+
+    setStatus("Saving")
+
+    const response = await fetch(editEndpoint, {
+      body: JSON.stringify({
+        source: {
+          file: selection.source.file,
+          id: selection.source.id,
+          line: selection.source.line,
+          column: selection.source.column
+        },
+        edit: {
+          kind: "class-token-replace",
+          from,
+          to: classTokenValue
+        }
+      }),
+      headers: {
+        "content-type": "application/json"
+      },
+      method: "POST"
+    })
+    const result = (await response.json()) as { ok: boolean; message?: string }
+
+    if (!result.ok) {
+      setStatus(result.message ?? "Save failed")
+      return
+    }
+
+    selection.element.classList.replace(from, classTokenValue)
+    setStatus("Saved")
+  }
+
   const top = Math.max(12, selection.rect.bottom + 8)
   const left = Math.min(
     Math.max(12, selection.rect.left),
@@ -246,6 +295,26 @@ function EditPopover({
           />
         </>
       ) : null}
+      {selection.source.classTokens.length > 0 ? (
+        <>
+          <label style={labelStyle} htmlFor="wire-grid-class-token-select">
+            Class color
+          </label>
+          <select
+            aria-label="Wire Grid class color token"
+            id="wire-grid-class-token-select"
+            onChange={(event) => setClassTokenValue(event.target.value)}
+            style={inputStyle}
+            value={classTokenValue}
+          >
+            {getClassTokenOptions(selection.source.classTokens[0]).map((token) => (
+              <option key={token} value={token}>
+                {token}
+              </option>
+            ))}
+          </select>
+        </>
+      ) : null}
       <div style={popoverFooterStyle}>
         {selection.source.kind !== "jsx-style" ? (
           <button onClick={saveTextEdit} style={saveButtonStyle} type="button">
@@ -255,6 +324,15 @@ function EditPopover({
         {selection.source.styleProps.includes("color") ? (
           <button onClick={saveColorEdit} style={saveButtonStyle} type="button">
             Save color
+          </button>
+        ) : null}
+        {selection.source.classTokens.length > 0 ? (
+          <button
+            onClick={saveClassTokenEdit}
+            style={saveButtonStyle}
+            type="button"
+          >
+            Save class
           </button>
         ) : null}
         {status ? <span style={statusStyle}>{status}</span> : null}
@@ -295,6 +373,7 @@ function getEditableTarget(target: EventTarget | null) {
 
 function readSource(element: Element) {
   const file = element.getAttribute("data-wg-file")
+  const classTokens = element.getAttribute("data-wg-class-tokens")
   const id = element.getAttribute("data-wg-id")
   const kind = element.getAttribute("data-wg-kind")
   const line = element.getAttribute("data-wg-line")
@@ -308,6 +387,7 @@ function readSource(element: Element) {
 
   return {
     file,
+    classTokens: classTokens ? classTokens.split(",").filter(Boolean) : [],
     id,
     kind: kind ?? undefined,
     line: line ? Number(line) : undefined,
@@ -315,6 +395,27 @@ function readSource(element: Element) {
     prop: prop ?? undefined,
     styleProps: styleProps ? styleProps.split(",").filter(Boolean) : []
   }
+}
+
+function getDefaultClassToken(tokens: string[]) {
+  const token = tokens[0]
+
+  return token ? getClassTokenOptions(token)[0] : null
+}
+
+function getClassTokenOptions(token: string) {
+  const prefix = token.split("-")[0]
+
+  if (!["text", "bg", "border"].includes(prefix)) {
+    return [token]
+  }
+
+  return [
+    `${prefix}-red-500`,
+    `${prefix}-blue-500`,
+    `${prefix}-green-500`,
+    `${prefix}-slate-900`
+  ]
 }
 
 function rgbToHex(color: string) {

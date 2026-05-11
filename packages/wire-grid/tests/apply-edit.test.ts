@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  applyClassTokenReplaceEdit,
   applyInlineStyleEdit,
   applyJsxAttributeStringEdit,
   applyJsxTextEdit
@@ -169,6 +170,57 @@ describe("applyJsxTextEdit", () => {
     expect(result.ok).toBe(true)
     expect(result.ok && result.code).toContain(`color: "#2563eb"`)
   })
+
+  it("replaces simple className tokens", () => {
+    const result = applyClassTokenReplaceEdit(
+      `export default function Page() {
+  return <p data-wg-id="lede" className="text-red-500 font-bold">Hello</p>
+}
+`,
+      {
+        source: {
+          file: "app/page.tsx",
+          id: "lede"
+        },
+        edit: {
+          kind: "class-token-replace",
+          from: "text-red-500",
+          to: "text-blue-500"
+        }
+      }
+    )
+
+    expect(result.ok).toBe(true)
+    expect(result.ok && result.code).toContain(
+      `className="text-blue-500 font-bold"`
+    )
+  })
+
+  it("rejects dynamic className expressions", () => {
+    const result = applyClassTokenReplaceEdit(
+      `export default function Page() {
+  return <p data-wg-id="lede" className={className}>Hello</p>
+}
+`,
+      {
+        source: {
+          file: "app/page.tsx",
+          id: "lede"
+        },
+        edit: {
+          kind: "class-token-replace",
+          from: "text-red-500",
+          to: "text-blue-500"
+        }
+      }
+    )
+
+    expect(result).toMatchObject({
+      ok: false,
+      code: "UNSUPPORTED_NODE"
+    })
+  })
+
 
 
 

@@ -13,9 +13,12 @@ export async function applyEdit({ rootDir, request }: ApplyEditOptions) {
   if (
     request.edit.kind !== "jsx-text" &&
     request.edit.kind !== "jsx-attribute-string" &&
+    request.edit.kind !== "class-token-replace" &&
     request.edit.kind !== "inline-style-set"
   ) {
-    return unsupported(`Unsupported edit kind: ${request.edit.kind}`)
+    return unsupported(
+      `Unsupported edit kind: ${(request.edit as { kind: string }).kind}`
+    )
   }
 
   if (!request.source.id) {
@@ -30,6 +33,8 @@ export async function applyEdit({ rootDir, request }: ApplyEditOptions) {
   const result =
     request.edit.kind === "jsx-attribute-string"
       ? applyJsxAttributeStringEdit(code, request)
+      : request.edit.kind === "class-token-replace"
+        ? applyClassTokenReplaceEdit(code, request)
       : request.edit.kind === "inline-style-set"
         ? applyInlineStyleEdit(code, request)
       : applyJsxTextEdit(code, request)
@@ -51,6 +56,57 @@ export async function applyEdit({ rootDir, request }: ApplyEditOptions) {
     ok: true,
     file: request.source.file,
     changed: formattedCode !== code
+  } as const
+}
+
+export function applyClassTokenReplaceEdit(
+  code: string,
+  request: WireGridEditRequest
+) {
+  if (request.edit.kind !== "class-token-replace") {
+    return unsupported(`Unsupported edit kind: ${request.edit.kind}`)
+  }
+
+  if (!request.source.id) {
+    return unsupported("Missing source element id.")
+  }
+
+  const ast = parse(code, {
+    parser: babelTsParser
+  })
+  const targetElement = findTargetElement(ast, request)
+
+  if (!targetElement) {
+    return unsupported("Could not find the selected JSX element.")
+  }
+
+  const classNameAttribute = targetElement.openingElement.attributes.find(
+    (attribute) =>
+      t.isJSXAttribute(attribute) &&
+      t.isJSXIdentifier(attribute.name, { name: "className" })
+  )
+
+  if (
+    !classNameAttribute ||
+    !t.isJSXAttribute(classNameAttribute) ||
+    !t.isStringLiteral(classNameAttribute.value)
+  ) {
+    return unsupported("The selected element does not have an editable className.")
+  }
+
+  const tokens = classNameAttribute.value.value.split(/\s+/)
+  const tokenIndex = tokens.indexOf(request.edit.from)
+
+  if (tokenIndex === -1) {
+    return unsupported(`Could not find class token: ${request.edit.from}`)
+  }
+
+  tokens[tokenIndex] = request.edit.to
+  classNameAttribute.value = t.stringLiteral(tokens.join(" "))
+
+  return {
+    ok: true,
+    code: print(ast).code
   } as const
 }
 

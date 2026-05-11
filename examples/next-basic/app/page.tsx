@@ -38,6 +38,7 @@ export default function HomePage() {
           This app exists to test the Next.js adapter, runtime overlay, and
           future source editing flow against a real development server.
         </p>
+        <p className="tailwind-fixture text-red-500">Tailwind token text.</p>
       </section>
       <section className="component-fixture" aria-label="Component fixture">
         <FeatureCard>Component text child.</FeatureCard>

@@ -84,6 +84,15 @@ Inline style color editing supports elements with an existing style object:
 <h1 style={{ color: "#111827" }}>Hello</h1>
 ```
 
+Tailwind-style class color editing supports simple string `className` tokens
+for `text-*`, `bg-*`, and `border-*` classes:
+
+```tsx
+<p className="text-red-500">Hello</p>
+```
+
+Dynamic class expressions such as `className={cn(...)}` are rejected for now.
+
 ## Production Builds
 
 Wire Grid is intended for development. The current alpha keeps the editor workflow local and validates that the example production build still succeeds with `next build`.
