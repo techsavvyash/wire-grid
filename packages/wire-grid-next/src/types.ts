@@ -6,6 +6,18 @@ export interface WireGridNextOptions {
   enabled?: boolean
   exclude?: string[]
   include?: string[]
+  componentTextProps?: string[]
+  /**
+   * Instruments simple custom component text children. This is opt-in because
+   * components must forward data-wg-* props to a DOM element for browser
+   * selection to work.
+   */
+  instrumentComponentText?: boolean
+  /**
+   * Instruments simple string props on custom components. Components must
+   * forward data-wg-* props to a DOM element for browser selection to work.
+   */
+  instrumentComponentProps?: boolean
   overlay?: boolean
   rootDir?: string
 }

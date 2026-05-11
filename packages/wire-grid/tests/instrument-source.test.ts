@@ -1,0 +1,86 @@
+import { describe, expect, it } from "vitest"
+
+import { instrumentSource } from "../src/instrumentation/instrument-source.js"
+
+describe("instrumentSource", () => {
+  it("adds Wire Grid metadata to native JSX elements with text", () => {
+    const code = `export default function Page() {
+  return <h1>Hello</h1>
+}
+`
+
+    const result = instrumentSource({
+      code,
+      filePath: "/repo/app/app/page.tsx",
+      rootDir: "/repo/app"
+    })
+
+    expect(result).toContain(`data-wg-file="app/page.tsx"`)
+    expect(result).toContain(`data-wg-kind="jsx-text"`)
+  })
+
+  it("does not instrument custom components", () => {
+    const code = `export function Page() {
+  return <Title>Hello</Title>
+}
+`
+
+    expect(
+      instrumentSource({
+        code,
+        filePath: "/repo/app/app/page.tsx",
+        rootDir: "/repo/app"
+      })
+    ).toBe(code)
+  })
+
+  it("instruments simple custom component text when enabled", () => {
+    const code = `export function Page() {
+  return <Title>Hello</Title>
+}
+`
+
+    const result = instrumentSource({
+      code,
+      filePath: "/repo/app/app/page.tsx",
+      includeCustomComponents: true,
+      rootDir: "/repo/app"
+    })
+
+    expect(result).toContain(`data-wg-file="app/page.tsx"`)
+    expect(result).toContain(`data-wg-kind="jsx-component-text"`)
+  })
+
+  it("instruments one configured string prop on custom components", () => {
+    const code = `export function Page() {
+  return <Callout heading="Prop title" />
+}
+`
+
+    const result = instrumentSource({
+      code,
+      filePath: "/repo/app/app/page.tsx",
+      includeCustomComponentProps: true,
+      rootDir: "/repo/app"
+    })
+
+    expect(result).toContain(`data-wg-kind="jsx-prop-text"`)
+    expect(result).toContain(`data-wg-prop="heading"`)
+  })
+
+  it("adds editable style metadata to native elements with style objects", () => {
+    const code = `export function Page() {
+  return <h1 style={{ color: "#111827" }}>Hello</h1>
+}
+`
+
+    const result = instrumentSource({
+      code,
+      filePath: "/repo/app/app/page.tsx",
+      rootDir: "/repo/app"
+    })
+
+    expect(result).toContain(`data-wg-kind="jsx-text"`)
+    expect(result).toContain(`data-wg-style-props="color"`)
+  })
+})

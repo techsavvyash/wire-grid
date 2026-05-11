@@ -5,8 +5,8 @@ import type {
   NextConfigInput,
   NextConfigResolver,
   WireGridNextOptions
-} from "./types.js"
-import { ensureWireGridDevServer } from "./dev-server.js"
+} from "../types.js"
+import { ensureWireGridDevServer } from "../server/dev-server.js"
 
 const PHASE_DEVELOPMENT_SERVER = "phase-development-server"
 
@@ -27,6 +27,16 @@ export function withWireGrid(
 
       const resolvedOptions = { ...DEFAULT_OPTIONS, ...options }
       const rootDir = resolvedOptions.rootDir ?? process.cwd()
+      const componentTextProps = resolvedOptions.componentTextProps ?? [
+        "heading",
+        "label",
+        "title",
+        "text"
+      ]
+      const instrumentComponentProps =
+        resolvedOptions.instrumentComponentProps === true
+      const instrumentComponentText =
+        resolvedOptions.instrumentComponentText === true
       const metadataLoader = path.resolve(
         path.dirname(new URL(import.meta.url).pathname),
         "metadata-loader.js"
@@ -51,6 +61,9 @@ export function withWireGrid(
                 {
                   loader: metadataLoader,
                   options: {
+                    componentTextProps,
+                    instrumentComponentProps,
+                    instrumentComponentText,
                     rootDir
                   }
                 }
@@ -90,9 +103,9 @@ export function withWireGrid(
         return configWithRewrites
       }
 
-        return {
-          ...configWithRewrites,
-          webpack(
+      return {
+        ...configWithRewrites,
+        webpack(
           webpackConfig: Parameters<NonNullable<NextConfig["webpack"]>>[0],
           webpackContext: Parameters<NonNullable<NextConfig["webpack"]>>[1]
         ) {
@@ -104,6 +117,9 @@ export function withWireGrid(
               {
                 loader: metadataLoader,
                 options: {
+                  componentTextProps,
+                  instrumentComponentProps,
+                  instrumentComponentText,
                   rootDir
                 }
               }

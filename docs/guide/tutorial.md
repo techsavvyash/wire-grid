@@ -33,10 +33,21 @@ Open the app in the browser and click the **Wire Grid** edit button in the lower
 Click text that comes from a native JSX element with direct text children:
 
 ```tsx
-<h1>Hello, from other side.</h1>
+<h1 style={{ color: "#111827" }}>Hello, from other side.</h1>
 ```
 
 The runtime opens a popover containing the current text.
+
+The fixture also covers opt-in custom component cases:
+
+```tsx
+<FeatureCard>Component text child.</FeatureCard>
+<Callout heading="Prop text heading." />
+```
+
+These work when the component forwards Wire Grid metadata props to a DOM node.
+The `h1` fixture also exposes a color input because it has an inline style
+object.
 
 ## 4. Save The Edit
 
@@ -53,7 +64,7 @@ The core package parses the source file, finds the selected JSX node, updates it
 The source file should now contain the edited text:
 
 ```tsx
-<h1>Edited in the tutorial.</h1>
+<h1 style={{ color: "#111827" }}>Edited in the tutorial.</h1>
 ```
 
 Next.js refreshes the page after the file write.

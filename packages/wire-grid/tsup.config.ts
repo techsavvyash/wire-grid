@@ -3,10 +3,7 @@ import { defineConfig } from "tsup"
 export default defineConfig({
   clean: true,
   dts: false,
-  entry: {
-    index: "src/index.ts",
-    "metadata-loader": "src/loader/metadata-loader.ts"
-  },
+  entry: ["src/index.ts"],
   format: ["esm"],
   sourcemap: true,
   splitting: false,

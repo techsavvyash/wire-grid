@@ -52,10 +52,36 @@ The edit server only writes files inside the configured project root. It rejects
 export default withWireGrid(nextConfig, {
   enabled: process.env.NODE_ENV === "development",
   editEndpoint: "/__wire-grid/edit",
+  instrumentComponentProps: false,
+  instrumentComponentText: false,
+  componentTextProps: ["heading", "label", "title", "text"],
   overlay: true,
   rootDir: process.cwd(),
   debug: false
 })
+```
+
+`instrumentComponentText` and `instrumentComponentProps` are opt-in. They are
+intended for simple custom components that forward `data-wg-*` props to a DOM
+element:
+
+```tsx
+function CardTitle({ children, ...props }) {
+  return <h2 {...props}>{children}</h2>
+}
+
+function Callout({ heading, ...props }) {
+  return <aside {...props}>{heading}</aside>
+}
+```
+
+String prop editing only supports literal props such as
+`<Callout heading="Deploy faster" />`. Expression props remain unsupported.
+
+Inline style color editing supports elements with an existing style object:
+
+```tsx
+<h1 style={{ color: "#111827" }}>Hello</h1>
 ```
 
 ## Production Builds

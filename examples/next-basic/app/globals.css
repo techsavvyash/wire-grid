@@ -59,6 +59,32 @@ a {
   max-width: 760px;
 }
 
+.component-fixture {
+  display: grid;
+  gap: 16px;
+  margin-top: 24px;
+  max-width: 760px;
+}
+
+.feature-card {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 8px;
+  color: #065f46;
+  font-size: 18px;
+  font-weight: 700;
+  padding: 18px;
+}
+
+.callout {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  color: #1d4ed8;
+  font-size: 18px;
+  padding: 18px;
+}
+
 .stat-card {
   background: #ffffff;
   border: 1px solid #e5e7eb;

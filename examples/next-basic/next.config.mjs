@@ -5,5 +5,7 @@ const nextConfig = {
 }
 
 export default withWireGrid(nextConfig, {
-  debug: process.env.WIRE_GRID_DEBUG === "1"
+  debug: process.env.WIRE_GRID_DEBUG === "1",
+  instrumentComponentProps: true,
+  instrumentComponentText: true
 })

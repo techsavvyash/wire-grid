@@ -1,6 +1,6 @@
 import path from "node:path"
 
-import type { ValidateSourcePathOptions } from "./types.js"
+import type { ValidateSourcePathOptions } from "../types.js"
 
 const DEFAULT_ALLOWED_EXTENSIONS = [".js", ".jsx", ".ts", ".tsx"] as const
 const BLOCKED_SEGMENTS = new Set([

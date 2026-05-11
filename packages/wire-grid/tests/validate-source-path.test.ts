@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { validateSourcePath } from "./validate-source-path.js"
+import { validateSourcePath } from "../src/security/validate-source-path.js"
 
 const rootDir = "/repo/app"
 

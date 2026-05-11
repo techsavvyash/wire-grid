@@ -3,7 +3,7 @@ import path from "node:path"
 
 import { applyEdit, type WireGridEditRequest } from "@techsavvyash/wire-grid"
 
-import type { WireGridNextOptions } from "./types.js"
+import type { WireGridNextOptions } from "../types.js"
 
 interface WireGridDevServer {
   port: number

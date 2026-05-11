@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { withWireGrid } from "./with-wire-grid.js"
+import { withWireGrid } from "../src/config/with-wire-grid.js"
 
 const PHASE_DEVELOPMENT_SERVER = "phase-development-server"
 const PHASE_PRODUCTION_BUILD = "phase-production-build"
@@ -28,6 +28,28 @@ describe("withWireGrid", () => {
       })
     ])
   })
+
+  it("passes custom component instrumentation to the metadata loader", async () => {
+    const wrapped = withWireGrid({}, {
+      instrumentComponentProps: true,
+      instrumentComponentText: true,
+      rootDir: process.cwd()
+    })
+    const result = await wrapped(PHASE_DEVELOPMENT_SERVER)
+    const rule = result.turbopack?.rules?.["*.{jsx,tsx}"]
+
+    expect(rule).toMatchObject({
+      loaders: [
+        {
+          options: {
+            instrumentComponentProps: true,
+            instrumentComponentText: true
+          }
+        }
+      ]
+    })
+  })
+
 
   it("preserves a user webpack function during development", async () => {
     const webpackConfig = { module: { rules: [] } }

@@ -15,7 +15,10 @@ interface SelectionState {
     column?: number
     file: string
     id: string
+    kind?: string
     line?: number
+    prop?: string
+    styleProps: string[]
   }
 }
 
@@ -26,6 +29,7 @@ export function WireGridOverlay({
   const [active, setActive] = useState(false)
   const [hoverRect, setHoverRect] = useState<DOMRect | null>(null)
   const [selection, setSelection] = useState<SelectionState | null>(null)
+  const [colorValue, setColorValue] = useState("#111827")
   const [value, setValue] = useState("")
   const [status, setStatus] = useState("")
 
@@ -62,6 +66,7 @@ export function WireGridOverlay({
         rect: target.getBoundingClientRect(),
         source
       })
+      setColorValue(rgbToHex(window.getComputedStyle(target).color) ?? "#111827")
       setValue(target.textContent?.trim() ?? "")
       setStatus("")
     }
@@ -87,8 +92,10 @@ export function WireGridOverlay({
           editEndpoint={editEndpoint}
           selection={selection}
           setStatus={setStatus}
+          setColorValue={setColorValue}
           setValue={setValue}
           status={status}
+          colorValue={colorValue}
           value={value}
         />
       ) : null}
@@ -114,19 +121,23 @@ export function WireGridOverlay({
 function EditPopover({
   editEndpoint,
   selection,
+  colorValue,
   setStatus,
+  setColorValue,
   setValue,
   status,
   value
 }: {
   editEndpoint: string
   selection: SelectionState
+  colorValue: string
   setStatus: (status: string) => void
+  setColorValue: (value: string) => void
   setValue: (value: string) => void
   status: string
   value: string
 }) {
-  async function saveEdit() {
+  async function saveTextEdit() {
     setStatus("Saving")
 
     const response = await fetch(editEndpoint, {
@@ -138,7 +149,11 @@ function EditPopover({
           column: selection.source.column
         },
         edit: {
-          kind: "jsx-text",
+          kind:
+            selection.source.kind === "jsx-prop-text"
+              ? "jsx-attribute-string"
+              : "jsx-text",
+          name: selection.source.prop,
           value
         }
       }),
@@ -158,6 +173,42 @@ function EditPopover({
     setStatus("Saved")
   }
 
+  async function saveColorEdit() {
+    setStatus("Saving")
+
+    const response = await fetch(editEndpoint, {
+      body: JSON.stringify({
+        source: {
+          file: selection.source.file,
+          id: selection.source.id,
+          line: selection.source.line,
+          column: selection.source.column
+        },
+        edit: {
+          kind: "inline-style-set",
+          property: "color",
+          value: colorValue
+        }
+      }),
+      headers: {
+        "content-type": "application/json"
+      },
+      method: "POST"
+    })
+    const result = (await response.json()) as { ok: boolean; message?: string }
+
+    if (!result.ok) {
+      setStatus(result.message ?? "Save failed")
+      return
+    }
+
+    if (selection.element instanceof HTMLElement) {
+      selection.element.style.color = colorValue
+    }
+
+    setStatus("Saved")
+  }
+
   const top = Math.max(12, selection.rect.bottom + 8)
   const left = Math.min(
     Math.max(12, selection.rect.left),
@@ -166,20 +217,46 @@ function EditPopover({
 
   return (
     <div data-wire-grid-overlay style={{ ...popoverStyle, left, top }}>
-      <label style={labelStyle} htmlFor="wire-grid-text-input">
-        Text
-      </label>
-      <input
-        aria-label="Wire Grid text value"
-        id="wire-grid-text-input"
-        onChange={(event) => setValue(event.target.value)}
-        style={inputStyle}
-        value={value}
-      />
+      {selection.source.kind !== "jsx-style" ? (
+        <>
+          <label style={labelStyle} htmlFor="wire-grid-text-input">
+            Text
+          </label>
+          <input
+            aria-label="Wire Grid text value"
+            id="wire-grid-text-input"
+            onChange={(event) => setValue(event.target.value)}
+            style={inputStyle}
+            value={value}
+          />
+        </>
+      ) : null}
+      {selection.source.styleProps.includes("color") ? (
+        <>
+          <label style={labelStyle} htmlFor="wire-grid-color-input">
+            Color
+          </label>
+          <input
+            aria-label="Wire Grid color value"
+            id="wire-grid-color-input"
+            onChange={(event) => setColorValue(event.target.value)}
+            style={colorInputStyle}
+            type="color"
+            value={colorValue}
+          />
+        </>
+      ) : null}
       <div style={popoverFooterStyle}>
-        <button onClick={saveEdit} style={saveButtonStyle} type="button">
-          Save
-        </button>
+        {selection.source.kind !== "jsx-style" ? (
+          <button onClick={saveTextEdit} style={saveButtonStyle} type="button">
+            Save
+          </button>
+        ) : null}
+        {selection.source.styleProps.includes("color") ? (
+          <button onClick={saveColorEdit} style={saveButtonStyle} type="button">
+            Save color
+          </button>
+        ) : null}
         {status ? <span style={statusStyle}>{status}</span> : null}
       </div>
     </div>
@@ -219,8 +296,11 @@ function getEditableTarget(target: EventTarget | null) {
 function readSource(element: Element) {
   const file = element.getAttribute("data-wg-file")
   const id = element.getAttribute("data-wg-id")
+  const kind = element.getAttribute("data-wg-kind")
   const line = element.getAttribute("data-wg-line")
   const column = element.getAttribute("data-wg-column")
+  const prop = element.getAttribute("data-wg-prop")
+  const styleProps = element.getAttribute("data-wg-style-props")
 
   if (!file || !id) {
     return null
@@ -229,9 +309,25 @@ function readSource(element: Element) {
   return {
     file,
     id,
+    kind: kind ?? undefined,
     line: line ? Number(line) : undefined,
-    column: column ? Number(column) : undefined
+    column: column ? Number(column) : undefined,
+    prop: prop ?? undefined,
+    styleProps: styleProps ? styleProps.split(",").filter(Boolean) : []
   }
+}
+
+function rgbToHex(color: string) {
+  const match = color.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/)
+
+  if (!match) {
+    return null
+  }
+
+  return `#${match
+    .slice(1)
+    .map((part) => Number(part).toString(16).padStart(2, "0"))
+    .join("")}`
 }
 
 const panelStyle = {
@@ -295,6 +391,11 @@ const inputStyle = {
   fontSize: 14,
   padding: "8px 10px",
   width: "100%"
+} satisfies CSSProperties
+
+const colorInputStyle = {
+  height: 34,
+  width: 64
 } satisfies CSSProperties
 
 const popoverFooterStyle = {

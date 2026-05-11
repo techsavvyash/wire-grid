@@ -3,11 +3,17 @@ export interface WireGridSourceLocation {
   line?: number
   column?: number
   id?: string
+  prop?: string
 }
 
 export type WireGridEdit =
   | {
       kind: "jsx-text"
+      value: string
+    }
+  | {
+      kind: "jsx-attribute-string"
+      name: string
       value: string
     }
   | {

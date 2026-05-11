@@ -6,7 +6,12 @@ export type {
   WireGridEditResponse,
   WireGridSourceLocation
 } from "./types.js"
-export { applyEdit, applyJsxTextEdit } from "./apply-edit.js"
-export { instrumentSource } from "./instrument-source.js"
-export type { InstrumentSourceOptions } from "./instrument-source.js"
-export { validateSourcePath } from "./validate-source-path.js"
+export {
+  applyEdit,
+  applyInlineStyleEdit,
+  applyJsxAttributeStringEdit,
+  applyJsxTextEdit
+} from "./edit/apply-edit.js"
+export { instrumentSource } from "./instrumentation/instrument-source.js"
+export type { InstrumentSourceOptions } from "./instrumentation/instrument-source.js"
+export { validateSourcePath } from "./security/validate-source-path.js"
