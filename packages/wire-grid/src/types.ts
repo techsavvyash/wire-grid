@@ -30,6 +30,7 @@ export type WireGridEdit =
 export interface WireGridEditRequest {
   source: WireGridSourceLocation
   edit: WireGridEdit
+  preview?: boolean
 }
 
 export type WireGridEditResponse =
@@ -37,6 +38,8 @@ export type WireGridEditResponse =
       ok: true
       file: string
       changed: boolean
+      diff?: string
+      preview?: boolean
     }
   | {
       ok: false

@@ -11,7 +11,8 @@ export {
   applyClassTokenReplaceEdit,
   applyInlineStyleEdit,
   applyJsxAttributeStringEdit,
-  applyJsxTextEdit
+  applyJsxTextEdit,
+  previewEdit
 } from "./edit/apply-edit.js"
 export { instrumentSource } from "./instrumentation/instrument-source.js"
 export type { InstrumentSourceOptions } from "./instrumentation/instrument-source.js"

@@ -55,9 +55,14 @@ Simple Tailwind-style color tokens expose a class token selector:
 <p className="tailwind-fixture text-red-500">Tailwind token text.</p>
 ```
 
-## 4. Save The Edit
+## 4. Preview The Diff
 
-Change the text and press **Save**. The runtime sends a request to the development endpoint:
+Change the text and press **Preview**. The runtime sends the edit request with
+`preview: true`, renders the returned diff, and leaves the source file untouched.
+
+## 5. Save The Edit
+
+Press **Save**. The runtime sends a request to the development endpoint:
 
 ```txt
 POST /__wire-grid/edit
@@ -65,7 +70,12 @@ POST /__wire-grid/edit
 
 The core package parses the source file, finds the selected JSX node, updates its text, formats the file, and writes it back to disk.
 
-## 5. Confirm The Source Changed
+## 6. Undo When Needed
+
+Press **Undo** to restore the last successful edit from the dev server's
+in-memory history.
+
+## 7. Confirm The Source Changed
 
 The source file should now contain the edited text:
 

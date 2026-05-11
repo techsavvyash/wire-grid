@@ -146,32 +146,102 @@ function EditPopover({
   status: string
   value: string
 }) {
-  async function saveTextEdit() {
-    setStatus("Saving")
+  const [diff, setDiff] = useState("")
 
+  function createTextRequest(preview = false) {
+    return {
+      source: {
+        file: selection.source.file,
+        id: selection.source.id,
+        line: selection.source.line,
+        column: selection.source.column
+      },
+      edit: {
+        kind:
+          selection.source.kind === "jsx-prop-text"
+            ? "jsx-attribute-string"
+            : "jsx-text",
+        name: selection.source.prop,
+        value
+      },
+      preview
+    }
+  }
+
+  function createColorRequest(preview = false) {
+    return {
+      source: {
+        file: selection.source.file,
+        id: selection.source.id,
+        line: selection.source.line,
+        column: selection.source.column
+      },
+      edit: {
+        kind: "inline-style-set",
+        property: "color",
+        value: colorValue
+      },
+      preview
+    }
+  }
+
+  function createClassTokenRequest(preview = false) {
+    const from = selection.source.classTokens[0]
+
+    if (!from || !classTokenValue) {
+      return null
+    }
+
+    return {
+      source: {
+        file: selection.source.file,
+        id: selection.source.id,
+        line: selection.source.line,
+        column: selection.source.column
+      },
+      edit: {
+        kind: "class-token-replace",
+        from,
+        to: classTokenValue
+      },
+      preview
+    }
+  }
+
+  async function postEdit(body: unknown) {
     const response = await fetch(editEndpoint, {
-      body: JSON.stringify({
-        source: {
-          file: selection.source.file,
-          id: selection.source.id,
-          line: selection.source.line,
-          column: selection.source.column
-        },
-        edit: {
-          kind:
-            selection.source.kind === "jsx-prop-text"
-              ? "jsx-attribute-string"
-              : "jsx-text",
-          name: selection.source.prop,
-          value
-        }
-      }),
+      body: JSON.stringify(body),
       headers: {
         "content-type": "application/json"
       },
       method: "POST"
     })
-    const result = (await response.json()) as { ok: boolean; message?: string }
+
+    return (await response.json()) as {
+      diff?: string
+      message?: string
+      ok: boolean
+    }
+  }
+
+  async function previewEdit(body: unknown) {
+    setStatus("Previewing")
+    const result = await postEdit(body)
+
+    if (!result.ok) {
+      setDiff("")
+      setStatus(result.message ?? "Preview failed")
+      return
+    }
+
+    setDiff(result.diff ?? "")
+    setStatus(result.diff ? "Preview ready" : "No changes")
+  }
+
+  async function saveTextEdit() {
+    setStatus("Saving")
+
+    const result = await postEdit(createTextRequest())
 
     if (!result.ok) {
       setStatus(result.message ?? "Save failed")
@@ -179,32 +249,14 @@ function EditPopover({
     }
 
     selection.element.textContent = value
+    setDiff("")
     setStatus("Saved")
   }
 
   async function saveColorEdit() {
     setStatus("Saving")
 
-    const response = await fetch(editEndpoint, {
-      body: JSON.stringify({
-        source: {
-          file: selection.source.file,
-          id: selection.source.id,
-          line: selection.source.line,
-          column: selection.source.column
-        },
-        edit: {
-          kind: "inline-style-set",
-          property: "color",
-          value: colorValue
-        }
-      }),
-      headers: {
-        "content-type": "application/json"
-      },
-      method: "POST"
-    })
-    const result = (await response.json()) as { ok: boolean; message?: string }
+    const result = await postEdit(createColorRequest())
 
     if (!result.ok) {
       setStatus(result.message ?? "Save failed")
@@ -215,47 +267,44 @@ function EditPopover({
       selection.element.style.color = colorValue
     }
 
+    setDiff("")
     setStatus("Saved")
   }
 
   async function saveClassTokenEdit() {
-    const from = selection.source.classTokens[0]
+    const request = createClassTokenRequest()
 
-    if (!from || !classTokenValue) {
+    if (!request) {
       setStatus("No editable class token")
       return
     }
 
     setStatus("Saving")
 
-    const response = await fetch(editEndpoint, {
-      body: JSON.stringify({
-        source: {
-          file: selection.source.file,
-          id: selection.source.id,
-          line: selection.source.line,
-          column: selection.source.column
-        },
-        edit: {
-          kind: "class-token-replace",
-          from,
-          to: classTokenValue
-        }
-      }),
-      headers: {
-        "content-type": "application/json"
-      },
-      method: "POST"
-    })
-    const result = (await response.json()) as { ok: boolean; message?: string }
+    const result = await postEdit(request)
 
     if (!result.ok) {
       setStatus(result.message ?? "Save failed")
       return
     }
 
-    selection.element.classList.replace(from, classTokenValue)
+    selection.element.classList.replace(request.edit.from, classTokenValue)
+    setDiff("")
     setStatus("Saved")
+  }
+
+  async function undoLastEdit() {
+    setStatus("Undoing")
+    const result = await postEdit({ action: "undo" })
+
+    if (!result.ok) {
+      setStatus(result.message ?? "Undo failed")
+      return
+    }
+
+    setDiff("")
+    setStatus("Undone")
+    window.setTimeout(() => window.location.reload(), 100)
   }
 
   const top = Math.max(12, selection.rect.bottom + 8)
@@ -317,26 +366,67 @@ function EditPopover({
       ) : null}
       <div style={popoverFooterStyle}>
         {selection.source.kind !== "jsx-style" ? (
-          <button onClick={saveTextEdit} style={saveButtonStyle} type="button">
-            Save
-          </button>
+          <>
+            <button
+              onClick={() => previewEdit(createTextRequest(true))}
+              style={secondaryButtonStyle}
+              type="button"
+            >
+              Preview
+            </button>
+            <button onClick={saveTextEdit} style={saveButtonStyle} type="button">
+              Save
+            </button>
+          </>
         ) : null}
         {selection.source.styleProps.includes("color") ? (
-          <button onClick={saveColorEdit} style={saveButtonStyle} type="button">
-            Save color
-          </button>
+          <>
+            <button
+              onClick={() => previewEdit(createColorRequest(true))}
+              style={secondaryButtonStyle}
+              type="button"
+            >
+              Preview color
+            </button>
+            <button onClick={saveColorEdit} style={saveButtonStyle} type="button">
+              Save color
+            </button>
+          </>
         ) : null}
         {selection.source.classTokens.length > 0 ? (
-          <button
-            onClick={saveClassTokenEdit}
-            style={saveButtonStyle}
-            type="button"
-          >
-            Save class
-          </button>
+          <>
+            <button
+              onClick={() => {
+                const request = createClassTokenRequest(true)
+
+                if (request) {
+                  void previewEdit(request)
+                }
+              }}
+              style={secondaryButtonStyle}
+              type="button"
+            >
+              Preview class
+            </button>
+            <button
+              onClick={saveClassTokenEdit}
+              style={saveButtonStyle}
+              type="button"
+            >
+              Save class
+            </button>
+          </>
         ) : null}
+        <button onClick={undoLastEdit} style={secondaryButtonStyle} type="button">
+          Undo
+        </button>
         {status ? <span style={statusStyle}>{status}</span> : null}
       </div>
+      {diff ? (
+        <pre aria-label="Wire Grid diff preview" style={diffStyle}>
+          {diff}
+        </pre>
+      ) : null}
     </div>
   )
 }
@@ -502,6 +592,7 @@ const colorInputStyle = {
 const popoverFooterStyle = {
   alignItems: "center",
   display: "flex",
+  flexWrap: "wrap",
   gap: 8,
   justifyContent: "space-between"
 } satisfies CSSProperties
@@ -516,6 +607,33 @@ const saveButtonStyle = {
   fontSize: 13,
   fontWeight: 700,
   padding: "7px 10px"
+} satisfies CSSProperties
+
+const secondaryButtonStyle = {
+  background: "#ffffff",
+  border: "1px solid #d1d5db",
+  borderRadius: 6,
+  color: "#111827",
+  cursor: "pointer",
+  font: "inherit",
+  fontSize: 13,
+  fontWeight: 700,
+  padding: "7px 10px"
+} satisfies CSSProperties
+
+const diffStyle = {
+  background: "#0f172a",
+  borderRadius: 6,
+  color: "#e5e7eb",
+  fontFamily:
+    "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace",
+  fontSize: 11,
+  lineHeight: 1.4,
+  margin: 0,
+  maxHeight: 150,
+  overflow: "auto",
+  padding: 8,
+  whiteSpace: "pre-wrap"
 } satisfies CSSProperties
 
 const statusStyle = {

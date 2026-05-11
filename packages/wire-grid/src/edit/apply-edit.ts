@@ -10,6 +10,31 @@ import type { ApplyEditOptions, WireGridEditRequest } from "../types.js"
 import { validateSourcePath } from "../security/validate-source-path.js"
 
 export async function applyEdit({ rootDir, request }: ApplyEditOptions) {
+  const preview = await previewEdit({ rootDir, request })
+
+  if (!preview.ok) {
+    return preview
+  }
+
+  if (!request.preview && preview.code !== undefined && preview.changed) {
+    const file = validateSourcePath({
+      rootDir,
+      filePath: request.source.file
+    })
+
+    await fs.writeFile(file, preview.code)
+  }
+
+  return {
+    ok: true,
+    file: request.source.file,
+    changed: preview.changed,
+    diff: preview.diff,
+    preview: request.preview || undefined
+  } as const
+}
+
+export async function previewEdit({ rootDir, request }: ApplyEditOptions) {
   if (
     request.edit.kind !== "jsx-text" &&
     request.edit.kind !== "jsx-attribute-string" &&
@@ -30,33 +55,41 @@ export async function applyEdit({ rootDir, request }: ApplyEditOptions) {
     filePath: request.source.file
   })
   const code = await fs.readFile(file, "utf8")
-  const result =
-    request.edit.kind === "jsx-attribute-string"
-      ? applyJsxAttributeStringEdit(code, request)
-      : request.edit.kind === "class-token-replace"
-        ? applyClassTokenReplaceEdit(code, request)
-      : request.edit.kind === "inline-style-set"
-        ? applyInlineStyleEdit(code, request)
-      : applyJsxTextEdit(code, request)
+  const result = applyEditToCode(code, request)
 
   if (!result.ok) {
     return result
   }
 
-  const formattedCode = result.code === code ? result.code : await format(result.code, {
-    filepath: file,
-    semi: false
-  })
-
-  if (formattedCode !== code) {
-    await fs.writeFile(file, formattedCode)
-  }
+  const formattedCode =
+    result.code === code
+      ? result.code
+      : await format(result.code, {
+          filepath: file,
+          semi: false
+        })
 
   return {
     ok: true,
     file: request.source.file,
-    changed: formattedCode !== code
+    changed: formattedCode !== code,
+    code: formattedCode,
+    diff: createLineDiff(code, formattedCode),
+    preview: true
   } as const
+}
+
+function applyEditToCode(code: string, request: WireGridEditRequest) {
+  switch (request.edit.kind) {
+    case "jsx-attribute-string":
+      return applyJsxAttributeStringEdit(code, request)
+    case "class-token-replace":
+      return applyClassTokenReplaceEdit(code, request)
+    case "inline-style-set":
+      return applyInlineStyleEdit(code, request)
+    case "jsx-text":
+      return applyJsxTextEdit(code, request)
+  }
 }
 
 export function applyClassTokenReplaceEdit(
@@ -356,4 +389,34 @@ function unsupported(message: string) {
     code: "UNSUPPORTED_NODE",
     message
   } as const
+}
+
+function createLineDiff(before: string, after: string) {
+  if (before === after) {
+    return ""
+  }
+
+  const beforeLines = before.split("\n")
+  const afterLines = after.split("\n")
+  const maxLength = Math.max(beforeLines.length, afterLines.length)
+  const lines: string[] = []
+
+  for (let index = 0; index < maxLength; index += 1) {
+    const beforeLine = beforeLines[index]
+    const afterLine = afterLines[index]
+
+    if (beforeLine === afterLine) {
+      continue
+    }
+
+    if (beforeLine !== undefined) {
+      lines.push(`- ${beforeLine}`)
+    }
+
+    if (afterLine !== undefined) {
+      lines.push(`+ ${afterLine}`)
+    }
+  }
+
+  return lines.join("\n")
 }

@@ -93,6 +93,30 @@ for `text-*`, `bg-*`, and `border-*` classes:
 
 Dynamic class expressions such as `className={cn(...)}` are rejected for now.
 
+## Preview And Undo
+
+The overlay can preview a source diff before applying an edit. Preview requests
+use the same endpoint and transform path, but include `preview: true` and do not
+write to disk.
+
+```json
+{
+  "preview": true,
+  "source": {
+    "file": "app/page.tsx",
+    "id": "app/page.tsx:12:8"
+  },
+  "edit": {
+    "kind": "jsx-text",
+    "value": "Preview this text"
+  }
+}
+```
+
+During the dev-server session, the Next adapter keeps an in-memory snapshot
+before each successful write. The overlay's Undo action restores the most recent
+snapshot through the same local edit server.
+
 ## Production Builds
 
 Wire Grid is intended for development. The current alpha keeps the editor workflow local and validates that the example production build still succeeds with `next build`.

@@ -1,7 +1,12 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http"
+import { promises as fs } from "node:fs"
 import path from "node:path"
 
-import { applyEdit, type WireGridEditRequest } from "@techsavvyash/wire-grid"
+import {
+  applyEdit,
+  validateSourcePath,
+  type WireGridEditRequest
+} from "@techsavvyash/wire-grid"
 
 import type { WireGridNextOptions } from "../types.js"
 
@@ -36,6 +41,8 @@ interface RequiredDevServerOptions {
 }
 
 function startWireGridDevServer(options: RequiredDevServerOptions) {
+  const editHistory: EditSnapshot[] = []
+
   const server = createServer(async (request, response) => {
     if (request.url !== options.editEndpoint) {
       sendJson(response, 404, {
@@ -56,11 +63,44 @@ function startWireGridDevServer(options: RequiredDevServerOptions) {
     }
 
     try {
-      const body = await readJsonBody<WireGridEditRequest>(request)
+      const body = await readJsonBody<WireGridEditRequest | WireGridUndoRequest>(
+        request
+      )
+
+      if (isUndoRequest(body)) {
+        const snapshot = editHistory.pop()
+
+        if (!snapshot) {
+          sendJson(response, 422, {
+            ok: false,
+            code: "NO_EDIT_HISTORY",
+            message: "There is no Wire Grid edit to undo."
+          })
+          return
+        }
+
+        await fs.writeFile(snapshot.filePath, snapshot.code)
+
+        sendJson(response, 200, {
+          ok: true,
+          file: snapshot.sourceFile,
+          changed: true,
+          undone: true
+        })
+        return
+      }
+
+      const snapshot = body.preview
+        ? null
+        : await readEditSnapshot(options.rootDir, body)
       const result = await applyEdit({
         rootDir: options.rootDir,
         request: body
       })
+
+      if (snapshot && result.ok && result.changed) {
+        editHistory.push(snapshot)
+      }
 
       sendJson(response, result.ok ? 200 : 422, result)
     } catch (error) {
@@ -91,6 +131,35 @@ function startWireGridDevServer(options: RequiredDevServerOptions) {
       resolve({ port: address.port })
     })
   })
+}
+
+interface EditSnapshot {
+  code: string
+  filePath: string
+  sourceFile: string
+}
+
+interface WireGridUndoRequest {
+  action: "undo"
+}
+
+function isUndoRequest(
+  request: WireGridEditRequest | WireGridUndoRequest
+): request is WireGridUndoRequest {
+  return "action" in request && request.action === "undo"
+}
+
+async function readEditSnapshot(rootDir: string, request: WireGridEditRequest) {
+  const filePath = validateSourcePath({
+    rootDir,
+    filePath: request.source.file
+  })
+
+  return {
+    code: await fs.readFile(filePath, "utf8"),
+    filePath,
+    sourceFile: request.source.file
+  }
 }
 
 function readJsonBody<T>(request: IncomingMessage) {

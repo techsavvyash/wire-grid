@@ -7,6 +7,7 @@ const pageFilePath = path.resolve(
 )
 const baselineHeading = "Hello, from other side."
 const editedHeading = "Edited by Playwright E2E."
+const previewEditedHeading = "Preview and undo by Playwright."
 const baselineComponentText = "Component text child."
 const editedComponentText = "Component edited by Playwright."
 const baselinePropText = "Prop text heading."
@@ -23,11 +24,64 @@ test.afterEach(async () => {
     pageFilePath,
     source
       .replace(editedHeading, baselineHeading)
+      .replace(previewEditedHeading, baselineHeading)
       .replace(editedComponentText, baselineComponentText)
       .replace(editedPropText, baselinePropText)
       .replace(`color: "${editedHeadingColor}"`, `color: "${baselineHeadingColor}"`)
       .replace(editedClassToken, baselineClassToken)
   )
+})
+
+test("previews source diffs and undoes the last edit", async ({ page }) => {
+  const consoleMessages: string[] = []
+  const relevantResponses: string[] = []
+
+  page.on("console", (message) => {
+    if (message.type() === "warning" || message.type() === "error") {
+      consoleMessages.push(`${message.type()}: ${message.text()}`)
+    }
+  })
+  page.on("response", (response) => {
+    const url = response.url()
+
+    if (url.includes("__wire-grid") || url.includes("_rsc")) {
+      relevantResponses.push(`${response.status()} ${url}`)
+    }
+  })
+
+  await page.goto("/")
+  await page.getByRole("button", { name: "Edit" }).click()
+  await page.getByRole("heading", { name: baselineHeading }).click()
+  await page
+    .getByRole("textbox", { name: "Wire Grid text value" })
+    .fill(previewEditedHeading)
+  await page.getByRole("button", { exact: true, name: "Preview" }).click()
+
+  await expect(
+    page.getByLabel("Wire Grid diff preview")
+  ).toContainText(previewEditedHeading)
+
+  await expect(readFile(pageFilePath, "utf8")).resolves.toContain(baselineHeading)
+  await expect(readFile(pageFilePath, "utf8")).resolves.not.toContain(
+    previewEditedHeading
+  )
+
+  await page.getByRole("button", { exact: true, name: "Save" }).click()
+  await expect(page.getByRole("heading", { name: previewEditedHeading })).toBeVisible()
+  await expect(readFile(pageFilePath, "utf8")).resolves.toContain(
+    previewEditedHeading
+  )
+
+  await page.getByRole("button", { exact: true, name: "Undo" }).click()
+  await expect(page.getByRole("heading", { name: baselineHeading })).toBeVisible()
+  await expect(readFile(pageFilePath, "utf8")).resolves.toContain(baselineHeading)
+  await expect(readFile(pageFilePath, "utf8")).resolves.not.toContain(
+    previewEditedHeading
+  )
+  expect(relevantResponses).toContainEqual(
+    expect.stringContaining("200 http://localhost:3100/__wire-grid/edit")
+  )
+  expect(consoleMessages).toEqual([])
 })
 
 test("edits native JSX text through Wire Grid", async ({ page }) => {

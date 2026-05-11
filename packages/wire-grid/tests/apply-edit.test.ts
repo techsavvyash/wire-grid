@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest"
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
+import { tmpdir } from "node:os"
+import path from "node:path"
 
 import {
   applyClassTokenReplaceEdit,
   applyInlineStyleEdit,
   applyJsxAttributeStringEdit,
-  applyJsxTextEdit
+  applyJsxTextEdit,
+  previewEdit
 } from "../src/edit/apply-edit.js"
 
 describe("applyJsxTextEdit", () => {
@@ -239,5 +243,44 @@ describe("applyJsxTextEdit", () => {
       ok: false,
       code: "UNSUPPORTED_NODE"
     })
+  })
+
+  it("previews edits without writing to disk", async () => {
+    const rootDir = await mkdtemp(path.join(tmpdir(), "wire-grid-preview-"))
+    const filePath = path.join(rootDir, "page.tsx")
+    const source = `export default function Page() {
+  return <h1 data-wg-id="title">Old title</h1>
+}
+`
+
+    try {
+      await writeFile(filePath, source)
+
+      const result = await previewEdit({
+        rootDir,
+        request: {
+          source: {
+            file: "page.tsx",
+            id: "title"
+          },
+          edit: {
+            kind: "jsx-text",
+            value: "Preview title"
+          },
+          preview: true
+        }
+      })
+
+      expect(result).toMatchObject({
+        ok: true,
+        changed: true,
+        preview: true
+      })
+      expect(result.ok && result.diff).toContain("-   return <h1")
+      expect(result.ok && result.diff).toContain("+   return <h1")
+      await expect(readFile(filePath, "utf8")).resolves.toBe(source)
+    } finally {
+      await rm(rootDir, { recursive: true, force: true })
+    }
   })
 })
