@@ -32,6 +32,7 @@ export function WireGridOverlay({
   const [selection, setSelection] = useState<SelectionState | null>(null)
   const [colorValue, setColorValue] = useState("#111827")
   const [classTokenValue, setClassTokenValue] = useState("")
+  const [undoAvailable, setUndoAvailable] = useState(false)
   const [value, setValue] = useState("")
   const [status, setStatus] = useState("")
 
@@ -101,6 +102,8 @@ export function WireGridOverlay({
           status={status}
           colorValue={colorValue}
           classTokenValue={classTokenValue}
+          setUndoAvailable={setUndoAvailable}
+          undoAvailable={undoAvailable}
           value={value}
         />
       ) : null}
@@ -131,8 +134,10 @@ function EditPopover({
   setStatus,
   setColorValue,
   setClassTokenValue,
+  setUndoAvailable,
   setValue,
   status,
+  undoAvailable,
   value
 }: {
   editEndpoint: string
@@ -142,8 +147,10 @@ function EditPopover({
   setStatus: (status: string) => void
   setColorValue: (value: string) => void
   setClassTokenValue: (value: string) => void
+  setUndoAvailable: (value: boolean) => void
   setValue: (value: string) => void
   status: string
+  undoAvailable: boolean
   value: string
 }) {
   const [diff, setDiff] = useState("")
@@ -250,6 +257,7 @@ function EditPopover({
 
     selection.element.textContent = value
     setDiff("")
+    setUndoAvailable(true)
     setStatus("Saved")
   }
 
@@ -268,6 +276,7 @@ function EditPopover({
     }
 
     setDiff("")
+    setUndoAvailable(true)
     setStatus("Saved")
   }
 
@@ -290,6 +299,7 @@ function EditPopover({
 
     selection.element.classList.replace(request.edit.from, classTokenValue)
     setDiff("")
+    setUndoAvailable(true)
     setStatus("Saved")
   }
 
@@ -303,6 +313,7 @@ function EditPopover({
     }
 
     setDiff("")
+    setUndoAvailable(false)
     setStatus("Undone")
     window.setTimeout(() => window.location.reload(), 100)
   }
@@ -417,9 +428,11 @@ function EditPopover({
             </button>
           </>
         ) : null}
-        <button onClick={undoLastEdit} style={secondaryButtonStyle} type="button">
-          Undo
-        </button>
+        {undoAvailable ? (
+          <button onClick={undoLastEdit} style={secondaryButtonStyle} type="button">
+            Undo
+          </button>
+        ) : null}
         {status ? <span style={statusStyle}>{status}</span> : null}
       </div>
       {diff ? (

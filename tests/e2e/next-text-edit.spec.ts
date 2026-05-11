@@ -52,6 +52,7 @@ test("previews source diffs and undoes the last edit", async ({ page }) => {
   await page.goto("/")
   await page.getByRole("button", { name: "Edit" }).click()
   await page.getByRole("heading", { name: baselineHeading }).click()
+  await expect(page.getByRole("button", { exact: true, name: "Undo" })).toBeHidden()
   await page
     .getByRole("textbox", { name: "Wire Grid text value" })
     .fill(previewEditedHeading)
@@ -65,9 +66,11 @@ test("previews source diffs and undoes the last edit", async ({ page }) => {
   await expect(readFile(pageFilePath, "utf8")).resolves.not.toContain(
     previewEditedHeading
   )
+  await expect(page.getByRole("button", { exact: true, name: "Undo" })).toBeHidden()
 
   await page.getByRole("button", { exact: true, name: "Save" }).click()
   await expect(page.getByRole("heading", { name: previewEditedHeading })).toBeVisible()
+  await expect(page.getByRole("button", { exact: true, name: "Undo" })).toBeVisible()
   await expect(readFile(pageFilePath, "utf8")).resolves.toContain(
     previewEditedHeading
   )
