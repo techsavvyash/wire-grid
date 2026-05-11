@@ -17,6 +17,7 @@ During `next dev`, the adapter:
 - Starts a local sidecar edit server.
 - Adds a Next rewrite from `/__wire-grid/edit` to that local server.
 - Instruments JSX files with development-only `data-wg-*` metadata.
+- Delegates edit, preview, and undo requests to the shared core edit handler.
 - Supports Turbopack rules and a webpack fallback.
 
 The browser runtime sends edit requests to:

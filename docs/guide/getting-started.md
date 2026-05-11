@@ -72,11 +72,15 @@ Click **Wire Grid**, select editable text, change the value, and press **Save**.
 - Next.js development server.
 - Native JSX elements like `h1`, `p`, `span`, `button`, and `strong`.
 - Direct JSX text children.
+- Opt-in custom component text and literal string props when metadata props are forwarded.
+- Inline style color edits for existing style objects.
+- Simple `text-*`, `bg-*`, and `border-*` class token color edits.
+- Diff preview before write and undo for the last edit in the current dev-server session.
 - Source files with `.js`, `.jsx`, `.ts`, and `.tsx` extensions.
 
 ## Not Supported Yet
 
 - Text rendered from variables, props, function calls, CMS content, or API data.
-- Custom component children.
-- CSS and color editing.
+- Dynamic `className` expressions.
+- Arbitrary CSS file editing.
 - Production use.
